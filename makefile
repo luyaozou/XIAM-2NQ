@@ -1,6 +1,6 @@
 # Makefile XIAM  (H.Hartwig  Mai 1996)
        F77 = gfortran
-  F77FLAGS = -O # -O2 # # -g -C # -O2 -funroll-loops -m486 -fexpensive-optimizations -fstrength-reduce # 
+  F77FLAGS = -O2 -static # -O2 # # -g -C # -O2 -funroll-loops -m486 -fexpensive-optimizations -fstrength-reduce # 
       SRCS = iam.f iamm.f iamv.f iamv2.f iamio.f iamint.f iamfit.f iamadj.f iamsys.f 
       OBJS = iam.o iamm.o iamv.o iamv2.o iamio.o iamint.o iamfit.o iamadj.o iamsys.o
     LIBOBJ = mgetx.o iamlib.o 
@@ -11,33 +11,44 @@
 
   LOCAL_LIBS_PATH = -L../../lib -L../lib -L./lib
 
+ifeq ($(OS), Windows)
+	F77 = x86_64-w64-mingw32-gfortran
+	F77FLAGS = -O2 -static
+	OBJS = $(SRCS:.f=.win.o)
+	LIBOBJ = $(LIBSRC:.f=.win.o)
+	EXENAME = xiam.exe
+endif
+
 iam:     $(OBJS) $(LIBOBJ)
-	$(F77) -static -o  $(EXENAME) $(OBJS) $(LIBOBJ) 
+	$(F77) $(F77FLAGS) -o $(EXENAME) $(OBJS) $(LIBOBJ) 
 
 #iam:     $(OBJS) 
 #	$(F77) -o $(EXENAME) $(OBJS) $(LOCAL_LIBS) $(LOCAL_LIBS_PATH)
 
-iam.o :   iam.f iam.fi iamdata.fi  
+iam.o iam.win.o:   iam.f iam.fi iamdata.fi  
 
-iamio.o :  iamio.f iam.fi iamdata.fi 
+iamio.o iamio.win.o:  iamio.f iam.fi iamdata.fi 
 
-iamint.o :  iamint.f iam.fi  
+iamint.o iamint.win.o:  iamint.f iam.fi  
 
-iamadj.o :  iamadj.f iam.fi  
+iamadj.o iamadj.win.o:  iamadj.f iam.fi  
 
-iamm.o :  iamm.f iam.fi
+iamm.o iamm.win.o:  iamm.f iam.fi
 
-iamv.o :  iamv.f iam.fi
+iamv.o iamv.win.o:  iamv.f iam.fi
 
-iamv2.o : iamv2.f iam.fi
+iamv2.o iamv2.win.o: iamv2.f iam.fi
 
-iamfit.o : iamfit.f iam.fi
+iamfit.o iamfit.win.o: iamfit.f iam.fi
 
 mgetx.o : mgetx.f mgetx.fi
 
 
 .f.o: 
 	$(F77) $(F77FLAGS) -c $<
+
+%.win.o: %.f
+	$(F77) $(F77FLAGS) -c $< -o $@
 
 #    for SGI   
 #iamv.o : iamv.f iam.fi
@@ -66,8 +77,10 @@ install:
 	fi
 
 clean:
+	rm -f $(OBJS) $(LIBOBJ) $(EXENAME)
+
+clean-all:
 	rm -f $(OBJS) $(LIBOBJ) $(EXENAME) *.o *.mod *.a *.so *~ core* 
-	rm -f $(EXENAME)
 
 uninstall:
 	@echo "uninstalling $(EXENAME) from $(INSTALL_DIR)"
