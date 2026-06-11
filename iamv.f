@@ -7,6 +7,8 @@ C     the evalues are put in the field of dnv(1..ndata,Q_ENG,Q_UP/LO)
 C     the deviations DE/DPi in dnv(1..ndata,DQ_ENG,Q_UP/LO(i))
 C     fistat = 0 for regular calculation of Eigenvalues
 C     fistat > 0  Eigenvalues for differential quotient
+
+      USE memory_pool, ONLY: hs, zrs, zis
       implicit none
       include 'iam.fi'
       integer j, gam, f, ib, npar, fistat, is, f1, k, p, w, Temp                    
@@ -738,6 +740,7 @@ C     the deviations DE/DPi in dnv(1..ndata,DQ_ENG,Q_UP/LO(i))
 C     fistat = 0 for regular calculation of Eigenvalues
 C     fistat > 0  Eigenvalues for differential quotient
 
+      USE memory_pool, ONLY: zr, zi
       implicit none
       include 'iam.fi'
       integer j, gam, f, ib, npar, fistat, is, f1
@@ -759,7 +762,7 @@ C     quantum numbers
       integer qv(DIMTOT)
 C     work
       real*8  e(DIMTOT),e2(DIMTOT),tau(2,DIMTOT)
-      real*8  zr(DIMTOT,DIMTOT),zi(DIMTOT,DIMTOT)
+C      real*8  zr(DIMTOT,DIMTOT),zi(DIMTOT,DIMTOT)
       real*8  dedp(DIMPAR)
       integer id,ie,i,iv,ik,itop,ivr,ivc,ir,ic,it1,it2,ikr,ikc
       integer eused(DIMTOT), usert,ierr
@@ -1636,7 +1639,7 @@ C----------------------------------------------------------------------
       integer qvk(DIMTOT,Q_K:Q_V+DIMTOP)
       integer ruse(DIMVV,DIMVV,DIMTOP)
       real*8  h(DIMTOT,DIMTOT),a(DIMPAR)
-      real*8            evalv(DIMV,-DIMSIG:DIMSIG,-DIMJ:DIMJ,DIMTOP)
+      real*8  evalv(DIMV,-DIMSIG:DIMSIG,-DIMJ:DIMJ,DIMTOP)
       real*8  ovv(DIMV,DIMV,DIMOVV,-DIMSIG:DIMSIG,-DIMJ:DIMJ,DIMTOP)
       real*8  rotm(-DIMJ:DIMJ,-DIMJ:DIMJ,1:2,DIMTOP)
       real*8  rott(-DIMJ:DIMJ,-DIMJ:DIMJ,DIMV,DIMV,DIMTOP)
@@ -1676,7 +1679,7 @@ C     Hellmann-Feynman-Theorem?
       integer qvk(DIMTOT,Q_K:Q_V+DIMTOP), ifit(DIMPAR)
       integer ruse(DIMVV,DIMVV,DIMTOP)
       real*8  a(DIMPAR),dedp(DIMPAR)
-      real*8            evalv(DIMV,-DIMSIG:DIMSIG,-DIMJ:DIMJ,DIMTOP)
+      real*8  evalv(DIMV,-DIMSIG:DIMSIG,-DIMJ:DIMJ,DIMTOP)
       real*8  ovv(DIMV,DIMV,DIMOVV,-DIMSIG:DIMSIG,-DIMJ:DIMJ,DIMTOP)
       real*8  rotm(-DIMJ:DIMJ,-DIMJ:DIMJ,1:2,DIMTOP)
       real*8  tori(-DIMJ:DIMJ,-DIMJ:DIMJ,DIMV,DIMV,
@@ -1716,7 +1719,7 @@ C     Hamilton matrix, yielding vor,voi
       integer ruse(DIMVV,DIMVV,DIMTOP)
       real*8  a(DIMPAR)
       real*8  vr(DIMTOT),vor(DIMTOT),vi(DIMTOT),voi(DIMTOT)
-      real*8            evalv(DIMV,-DIMSIG:DIMSIG,-DIMJ:DIMJ,DIMTOP)
+      real*8  evalv(DIMV,-DIMSIG:DIMSIG,-DIMJ:DIMJ,DIMTOP)
       real*8  ovv(DIMV,DIMV,DIMOVV,-DIMSIG:DIMSIG,-DIMJ:DIMJ,DIMTOP)
       real*8  rotm(-DIMJ:DIMJ,-DIMJ:DIMJ,1:2,DIMTOP)
       real*8  tori(-DIMJ:DIMJ,-DIMJ:DIMJ,DIMV,DIMV,
@@ -2231,6 +2234,7 @@ C----------------------------------------------------------------------
       end
 C----------------------------------------------------------------------
       subroutine esave(j,gam,f,ib,f1,qmk,eval,eused)
+      USE memory_pool, ONLY: dnv
       implicit none
       include 'iam.fi'
       real*8  eval(DIMTOT)
@@ -2294,6 +2298,7 @@ C                  end do
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------
       subroutine devsave(j,gam,f,ib,t,ifit,dfit,dedp,palc,pali)
+      USE memory_pool, ONLY: dnv
       implicit none
       include 'iam.fi'
       integer j,gam,f,t,ib,ifit(DIMPAR),dfit(DIMFIT)
@@ -3218,10 +3223,10 @@ C            end if
       end 
 C ---------------------------------------------------------------------
        subroutine rotat1(d,beta,j)
+       USE memory_pool, ONLY: darot
        implicit none
        include 'iam.fi'
        real*8  d(-DIMJ:DIMJ,-DIMJ:DIMJ,1:2)
-       real*8  da(-DIMJ-1:DIMJ+1,-DIMJ-1:DIMJ+1,1:2)
        real*8 d1(-2:2,-2:2, 1:2)
        real*8 cg(-1:1,-DIMJ-1:DIMJ+1)
        real*8 beta,djj1
@@ -3283,16 +3288,16 @@ C
 
        do k1=-j,j
          do k2=-j,j
-           da(k1,k2,1)=d(k1,k2,1)
-           da(k1,k2,2)=d(k1,k2,2)
+           darot(k1,k2,1)=d(k1,k2,1)
+           darot(k1,k2,2)=d(k1,k2,2)
          end do
        end do
        do k1=1,2
          do k2=-j-1,j+1
-           da( j+1,k2,k1)=0.0d0
-           da(-j-1,k2,k1)=0.0d0
-           da(k2, j+1,k1)=0.0d0
-           da(k2,-j-1,k1)=0.0d0
+           darot( j+1,k2,k1)=0.0d0
+           darot(-j-1,k2,k1)=0.0d0
+           darot(k2, j+1,k1)=0.0d0
+           darot(k2,-j-1,k1)=0.0d0
          end do
        end do
 
@@ -3320,10 +3325,10 @@ C         do k2=k1,j
            do m1=-1,1
              do m2=-1,1
              dnew=dnew
-     $            + cg(m1,k1)*d1(m1,m2,1)*da(k1-m1,k2-m2,1)*cg(m2,k2)
+     $            + cg(m1,k1)*d1(m1,m2,1)*darot(k1-m1,k2-m2,1)*cg(m2,k2)
              ddnew=ddnew
-     $            + cg(m1,k1)*d1(m1,m2,1)*da(k1-m1,k2-m2,2)*cg(m2,k2)
-     $            + cg(m1,k1)*d1(m1,m2,2)*da(k1-m1,k2-m2,1)*cg(m2,k2)
+     $            + cg(m1,k1)*d1(m1,m2,1)*darot(k1-m1,k2-m2,2)*cg(m2,k2)
+     $            + cg(m1,k1)*d1(m1,m2,2)*darot(k1-m1,k2-m2,1)*cg(m2,k2)
              end do
            end do
            d(k1,k2,1)=dnew

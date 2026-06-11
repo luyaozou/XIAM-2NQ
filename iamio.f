@@ -1235,6 +1235,7 @@ C----------------------------------------------------------------------
 C     ---------------------------------------------------------------------
       subroutine funpr(rofit,ndat,chi2,wght)
 C     print transition list
+      USE memory_pool, ONLY: dnv
       implicit none
       include 'iam.fi'
       real*8  rofit
@@ -2071,6 +2072,7 @@ C ---------------------------------------------------------------------
 
 C ---------------------------------------------------------------------
       subroutine ltxpr(rofit)
+      USE memory_pool, ONLY: dnv
       implicit none
       real*8  rofit
       include 'iam.fi'
@@ -2192,6 +2194,7 @@ c     $         ,(ffreq-fcalc)*1000.0d3,' &',bsl,bsl
 C----------------------------------------------------------------------
       subroutine prderiv(dfit,nfit)
 C     copy of the routine funcs
+      USE memory_pool, ONLY: dnv
       implicit none
       include 'iam.fi'
       integer nfit

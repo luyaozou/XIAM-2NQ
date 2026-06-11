@@ -31,7 +31,8 @@ C   maximum number of v basis funktions for one top
 
 C   maximum number of transitions 
       integer DIMLIN
-        parameter (DIMLIN=15000)
+C       parameter (DIMLIN=500)
+        parameter (DIMLIN=99999)  ! more lines. mm-wave
 
 C   maximum number of different sets of paramaters 
       integer DIMVB
@@ -126,7 +127,6 @@ C       parameter (DIMTDO=200)
         parameter (NV_DEL=DIMFIT+NV_ENG)   ! last derivativ of energy
       integer DIMDNV
         parameter (DIMDNV=NV_DEL)
-      real*8  dnv(DIMLIN, DIMDNV, Q_UP:Q_LO)
 
       integer NaQN,BINUNIT,UI,GU
         parameter (NaQN=-12345,BINUNIT=11,UI=5,GU=1)
@@ -1081,7 +1081,7 @@ C   woods(1-DIMVB) adjust(1-DIMVB)
       parameter(XP_EC=     8, XP_DE=    16)
 
 
-      common /data/qlin,dln,dnv,ctlpar,ctlint
+      common /data/qlin,dln,ctlpar,ctlint
      $             ,ctlnb
      $             ,size,gamma
      $             ,todo,ncalc,qvv,xcy,xde

@@ -5,6 +5,7 @@ C     Syntax of Input-File:
 C
 C     Phase Convention: <JK|Px|JK+1>=0.5*dsqrt(J*(J+1)-K*(K+1)) 
 C  
+      USE memory_pool
       implicit none
       
       include 'iam.fi'
@@ -52,6 +53,25 @@ C     real*8  ab(DIMPAR)
       common/sig_com/sig_stat
 
       include 'iamdata.fi'
+
+      ALLOCATE(evalv(DIMV,-DIMSIG:DIMSIG,-DIMJ:DIMJ,DIMTOP))
+      ALLOCATE(ovv(DIMV,DIMV,DIMOVV,-DIMSIG:DIMSIG,-DIMJ:DIMJ,DIMTOP))
+      ALLOCATE(rotm(-DIMJ:DIMJ,-DIMJ:DIMJ,1:2,DIMTOP))
+      ALLOCATE(rott(-DIMJ:DIMJ,-DIMJ:DIMJ,DIMV,DIMV,DIMTOP))
+      ALLOCATE(tori(-DIMJ:DIMJ,-DIMJ:DIMJ,DIMV,DIMV,
+     $     -DIMSIG:DIMSIG,DIMTOP))
+      ALLOCATE(mvec(DIMM,DIMV,-DIMJ:DIMJ))
+      ALLOCATE(dnvtmp(DIMLIN,Q_UP:Q_LO))
+      ALLOCATE(dnvsav(DIMLIN,Q_UP:Q_LO))
+      ALLOCATE(dnv(DIMLIN, DIMDNV, Q_UP:Q_LO))
+      ALLOCATE(darot(-DIMJ-1:DIMJ+1,-DIMJ-1:DIMJ+1,1:2))
+      ALLOCATE(h(DIMTOT,DIMTOT))
+      ALLOCATE(hs(DIMQ2,DIMQ+DIMQ2,DIMTOT,DIMTOT))
+      ALLOCATE(zr(DIMTOT,DIMTOT))
+      ALLOCATE(zrs(DIMQ2,DIMQ+DIMQ2,DIMTOT,DIMTOT))
+      ALLOCATE(zi(DIMTOT,DIMTOT))
+      ALLOCATE(zis(DIMQ2,DIMQ+DIMQ2,DIMTOT,DIMTOT))
+
       call mysignal()
       
       pi=dacos(-1.0d0)
@@ -611,6 +631,7 @@ C     see procedure mysignal() in iamsys.f
 C----------------------------------------------------------------------
       subroutine funcs(ix,df,dfda,a,sig,nfit,ifit,dfit,idfrq)
 C     interface subroutine between LM Fit and the dnv matrix
+      USE memory_pool, ONLY: dnv
       implicit none
       include 'iam.fi'
       integer ix, nfit, idfrq
@@ -681,7 +702,8 @@ C----------------------------------------------------------------------
 C     simple calculation of the spectrum if istat .le. 0
 C     calculation of derivatives if istat.gt.0
 C     if istat.gt.1 better derivatives are used
-
+      
+      USE memory_pool, ONLY: dnvtmp, dnvsav, dnv
       implicit none
       include 'iam.fi'
       real*8  a(DIMPAR,DIMVB)
@@ -691,13 +713,12 @@ C     if istat.gt.1 better derivatives are used
 C     local ..
       integer ifitmp(DIMPAR,DIMVB)
       real*8  ad(DIMPAR,DIMVB)
-      real*8  dnvtmp(DIMLIN,Q_UP:Q_LO),dnvsav(DIMLIN,Q_UP:Q_LO)
       integer i,j,pri,ib
       real*8  diffup,difflo,delta,dsum,devar(DIMPAR)
       integer myand
       real*8  myrand
       external myand,myrand
-      save devar, dnvsav
+      save devar
       data devar /DIMPAR*1.0/
       if (istat.le.0) then
 C     clear the old eigenvalues und derivativs
@@ -803,6 +824,7 @@ C     calculation of the eigenvalues
 C     the evalues are put in the field of dnv(1..ndata,NV_ENG,Q_UP/LO)
 C     the deviations DE/DPi in dnv(1..ndata,2-DIMPAR,Q_UP/LO(i))
 
+      USE memory_pool
       implicit none
       include 'iam.fi'
       real*8  a(DIMPAR,DIMVB)
@@ -829,12 +851,7 @@ C     work
       real*8  evhsdw(DIMDW,DIMTOT)!one extra to keep double well working...
       real*8  h(DIMTOT,DIMTOT)
       real*8  evh   (DIMTOT)!one extra to keep double well working...
-      real*8  evalv(DIMV,-DIMSIG:DIMSIG,-DIMJ:DIMJ,DIMTOP)
-      real*8  ovv(DIMV,DIMV,DIMOVV,-DIMSIG:DIMSIG,-DIMJ:DIMJ,DIMTOP)
-      real*8  rotm(-DIMJ:DIMJ,-DIMJ:DIMJ,1:2,DIMTOP)
-      real*8  rott(-DIMJ:DIMJ,-DIMJ:DIMJ,DIMV,DIMV,DIMTOP)
-      real*8  tori(-DIMJ:DIMJ,-DIMJ:DIMJ,DIMV,DIMV,
-     $     -DIMSIG:DIMSIG,DIMTOP)
+      
       integer qmv(DIMV),oldj(DIMTOP)
       real*8  ints
       real*8  beta_tot !herbers2026
@@ -843,7 +860,7 @@ C     work
       integer qf1
       integer myand,not
       external myand
-      save    evalv,ovv,rotm,rott,tori,qmv,oib
+      save    qmv,oib
       fstatus=-1
 
 
@@ -1062,6 +1079,7 @@ C----------------------------------------------------------------------
      $     ,a,qmv,ifit,npar,fistat,imaxm)
 C     calculation of the eigenvalues and matrixelements 
 C     of the internal rotation part
+      USE memory_pool, ONLY: mvec
       implicit none
       include 'iam.fi'
       integer ib,imaxm

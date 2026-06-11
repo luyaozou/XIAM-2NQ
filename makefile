@@ -1,37 +1,43 @@
 # Makefile XIAM  (H.Hartwig  Mai 1996)
-       F77 = gfortran
-  F77FLAGS = -O2 -static # -O2 # # -g -C # -O2 -funroll-loops -m486 -fexpensive-optimizations -fstrength-reduce # 
-      SRCS = iam.f iamm.f iamv.f iamv2.f iamio.f iamint.f iamfit.f iamadj.f iamsys.f 
-      OBJS = iam.o iamm.o iamv.o iamv2.o iamio.o iamint.o iamfit.o iamadj.o iamsys.o
-    LIBOBJ = mgetx.o iamlib.o 
+        FC = gfortran
+    FFLAGS = -O2 -static # -O2 # # -g -C # -O2 -funroll-loops -m486 -fexpensive-optimizations -fstrength-reduce # 
+      SRCS = memory_pool.f90 iam.f iamm.f iamv.f iamv2.f iamio.f iamint.f iamfit.f iamadj.f iamsys.f
+      OBJS = $(addsuffix .o, $(basename $(SRCS)))
     LIBSRC = mgetx.f iamlib.f 
+    LIBOBJ = $(addsuffix .o, $(basename $(LIBSRC)))
    EXENAME = xiam
 
        LOCAL_LIBS = -ldiv
 
   LOCAL_LIBS_PATH = -L../../lib -L../lib -L./lib
 
+# track OS
+CURRENT_OS = $(if $(OS),$(OS),Linux)
+OS_TRACKER = .build_os_$(CURRENT_OS)
+
 ifeq ($(OS), Windows)
-	F77 = x86_64-w64-mingw32-gfortran
-	F77FLAGS = -O2 -static
-	OBJS = $(SRCS:.f=.win.o)
-	LIBOBJ = $(LIBSRC:.f=.win.o)
+	FC = x86_64-w64-mingw32-gfortran
+	FFLAGS = -O2 -static
+	OBJS = $(addsuffix .win.o, $(basename $(SRCS)))
+	LIBOBJ = $(addsuffix .win.o, $(basename $(LIBSRC)))
 	EXENAME = xiam.exe
 endif
 
 iam:     $(OBJS) $(LIBOBJ)
-	$(F77) $(F77FLAGS) -o $(EXENAME) $(OBJS) $(LIBOBJ) 
+	$(FC) $(FFLAGS) -o $(EXENAME) $(OBJS) $(LIBOBJ) 
 
 #iam:     $(OBJS) 
-#	$(F77) -o $(EXENAME) $(OBJS) $(LOCAL_LIBS) $(LOCAL_LIBS_PATH)
+#	$(FC) -o $(EXENAME) $(OBJS) $(LOCAL_LIBS) $(LOCAL_LIBS_PATH)
 
-iam.o iam.win.o:   iam.f iam.fi iamdata.fi  
+memory_pool.o memory_pool.win.o: memory_pool.f90
 
-iamio.o iamio.win.o:  iamio.f iam.fi iamdata.fi 
+iam.o iam.win.o:   iam.f iam.fi iamdata.fi memory_pool.f90
 
-iamint.o iamint.win.o:  iamint.f iam.fi  
+iamio.o iamio.win.o:  iamio.f iam.fi iamdata.fi
 
-iamadj.o iamadj.win.o:  iamadj.f iam.fi  
+iamint.o iamint.win.o:  iamint.f iam.fi
+
+iamadj.o iamadj.win.o:  iamadj.f iam.fi
 
 iamm.o iamm.win.o:  iamm.f iam.fi
 
@@ -44,11 +50,29 @@ iamfit.o iamfit.win.o: iamfit.f iam.fi
 mgetx.o : mgetx.f mgetx.fi
 
 
-.f.o: 
-	$(F77) $(F77FLAGS) -c $<
+%.o: %.f
+	$(FC) $(FFLAGS) -c $< -o $@
+
+%.o: %.f90
+	$(FC) $(FFLAGS) -c $< -o $@
 
 %.win.o: %.f
-	$(F77) $(F77FLAGS) -c $< -o $@
+	$(FC) $(FFLAGS) -c $< -o $@
+
+%.win.o: %.f90
+	$(FC) $(FFLAGS) -c $< -o $@
+
+# deal with module file
+$(OS_TRACKER):
+	@rm -f .build_os_* *.mod
+	@touch $@
+
+memory_pool.o: $(OS_TRACKER)
+memory_pool.win.o: $(OS_TRACKER)
+
+# avoid cyclic dependence
+$(filter-out memory_pool.o, $(OBJS)): memory_pool.o
+$(filter-out memory_pool.win.o, $(OBJS)): memory_pool.win.o
 
 #    for SGI   
 #iamv.o : iamv.f iam.fi
@@ -77,10 +101,10 @@ install:
 	fi
 
 clean:
-	rm -f $(OBJS) $(LIBOBJ) $(EXENAME)
+	rm -f $(OBJS) $(LIBOBJ) $(EXENAME) *.mod .build_os_*
 
 clean-all:
-	rm -f $(OBJS) $(LIBOBJ) $(EXENAME) *.o *.mod *.a *.so *~ core* 
+	rm -f $(OBJS) $(LIBOBJ) $(EXENAME) *.o *.mod .build_os_* *.a *.so *~ core* 
 
 uninstall:
 	@echo "uninstalling $(EXENAME) from $(INSTALL_DIR)"
